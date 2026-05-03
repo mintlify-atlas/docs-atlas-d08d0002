@@ -1,0 +1,148 @@
+---
+title: "Set up Elixir in GitHub Actions CI with setup-beam"
+description: "Install Erlang/OTP and Elixir in your GitHub Actions workflow using setup-beam, with matrix testing, Hex package manager, and problem matchers."
+---
+
+The `erlef/setup-beam` action installs a compatible Erlang/OTP and Elixir pair into your GitHub Actions runner, adds both to `PATH`, and optionally runs `mix local.hex` and `mix local.rebar` so your workflow is ready to fetch dependencies immediately.
+
+## Basic setup
+
+<Steps>
+  <Step title="Check out your repository">
+    Add the standard checkout step before any BEAM tooling:
+
+    ```yaml
+    - uses: actions/checkout@v4
+    ```
+  </Step>
+
+  <Step title="Install OTP and Elixir">
+    Use `erlef/setup-beam@v1` with both `otp-version` and `elixir-version`. Always quote version numbers to prevent YAML from dropping trailing zeros (e.g., `23.0` would become `23`):
+
+    ```yaml
+    - uses: erlef/setup-beam@v1
+      with:
+        otp-version: '27.3.3'
+        elixir-version: '1.18.3'
+    ```
+  </Step>
+
+  <Step title="Fetch dependencies">
+    ```yaml
+    - run: mix deps.get
+    ```
+  </Step>
+
+  <Step title="Run the test suite">
+    ```yaml
+    - run: mix test
+    ```
+  </Step>
+</Steps>
+
+## Complete matrix workflow
+
+The example below runs tests across a matrix of OTP and Elixir versions on Ubuntu 24.04. Each combination runs as a separate job, so failures on one pair do not block others.
+
+```yaml
+# .github/workflows/ci.yml
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    name: OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
+    strategy:
+      matrix:
+        otp: ['25.3.2', '26.2.5', '27.3.3']
+        elixir: ['1.17.3', '1.18.3']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{matrix.otp}}
+          elixir-version: ${{matrix.elixir}}
+      - run: mix deps.get
+      - run: mix test
+```
+
+This produces six jobs: every OTP version paired with every Elixir version. See [Matrix testing across BEAM versions](/guides/matrix-testing) for more patterns, including pinned compatibility combinations.
+
+## Controlling Hex and rebar installation
+
+When `elixir-version` is set, `setup-beam` automatically runs `mix local.hex` and `mix local.rebar` after installing Elixir. Two inputs let you opt out:
+
+| Input | Default | Description |
+|---|---|---|
+| `install-hex` | `true` | Run `mix local.hex --force` after installing Elixir |
+| `install-rebar` | `true` | Run `mix local.rebar --force` after installing Elixir |
+
+Set either to `false` to skip it:
+
+```yaml
+- uses: erlef/setup-beam@v1
+  with:
+    otp-version: '27.3.3'
+    elixir-version: '1.18.3'
+    install-hex: false
+    install-rebar: false
+```
+
+<Note>
+  Disabling `install-hex` means `mix deps.get` will fail unless Hex is already available on the runner. Only skip it if you manage Hex separately or your project does not use Hex dependencies.
+</Note>
+
+## Using a hex.pm mirror
+
+By default, `setup-beam` downloads OTP (on Linux) and Elixir from `builds.hex.pm`. You can point it at an alternative mirror or configure a fallback list. See [Configure hex.pm mirrors](/guides/hex-mirrors) for the full set of options.
+
+A quick example using jsDelivr as a fallback:
+
+```yaml
+- uses: erlef/setup-beam@v1
+  with:
+    otp-version: '27.3.3'
+    elixir-version: '1.18.3'
+    hexpm-mirrors: |
+      https://builds.hex.pm
+      https://cdn.jsdelivr.net/hex
+```
+
+## Using the elixir-version output
+
+After the setup step completes, the exact resolved version is available as a step output. Reference it downstream to annotate artifacts, cache keys, or release notes:
+
+```yaml
+- uses: erlef/setup-beam@v1
+  id: setup-beam
+  with:
+    otp-version: '27'
+    elixir-version: '1.18'
+
+- name: Print resolved versions
+  run: |
+    echo "OTP: ${{ steps.setup-beam.outputs.otp-version }}"
+    echo "Elixir: ${{ steps.setup-beam.outputs.elixir-version }}"
+```
+
+<Tip>
+  The `elixir-version` output includes the OTP suffix used for the build, for example `v1.18.3-otp-27`. Use this value in cache keys to avoid restoring a compiled dependency tree built against a different OTP major version.
+</Tip>
+
+## Problem matchers for Elixir
+
+`setup-beam` ships with problem matchers that annotate pull requests with compiler warnings and test failures directly in the GitHub UI. They are enabled by default. To disable them, set `disable_problem_matchers: true`:
+
+```yaml
+- uses: erlef/setup-beam@v1
+  with:
+    otp-version: '27.3.3'
+    elixir-version: '1.18.3'
+    disable_problem_matchers: true
+```
+
+When enabled, the matchers parse `mix compile` and `mix test` output and surface warnings as annotations on the diff. The matchers are adapted from [vscode-elixir](https://github.com/fr1zle/vscode-elixir) and cover both compiler warnings and ExUnit failure output.
+
+<Note>
+  Problem matchers apply only to Erlang and Elixir. There is no Gleam problem matcher at this time.
+</Note>

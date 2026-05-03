@@ -1,0 +1,81 @@
+---
+title: "Set up Gleam in GitHub Actions workflows with setup-beam"
+description: "Install Gleam with or without Erlang/OTP in GitHub Actions using setup-beam, covering both the standard and OTP-free installation scenarios."
+---
+
+The `erlef/setup-beam` action can install [Gleam](https://gleam.run/) alongside Erlang/OTP or, in a special case, without OTP at all. The most common scenario is Gleam + OTP, which lets you compile and run Gleam programs on the BEAM. The OTP-free mode is useful for workflows that only need Gleam's type checker or language tooling without a full runtime.
+
+## Installation scenarios
+
+<Tabs>
+  <Tab title="Gleam with OTP">
+    The standard setup installs OTP first, then Gleam. This is required for running `gleam test`, `gleam run`, or any command that executes BEAM bytecode.
+
+    ```yaml
+    # .github/workflows/ci.yml
+    on: push
+
+    jobs:
+      test:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - uses: erlef/setup-beam@v1
+            with:
+              otp-version: '27'
+              gleam-version: '1.9.0'
+          - run: gleam test
+    ```
+
+    Both `otp-version` and `gleam-version` are required for this scenario. The action installs OTP first, then downloads and installs the Gleam binary from the [gleam-lang/gleam](https://github.com/gleam-lang/gleam) GitHub releases.
+  </Tab>
+
+  <Tab title="Gleam without OTP">
+    Setting `otp-version: false` skips OTP installation entirely. Only the Gleam binary is installed.
+
+    ```yaml
+    # .github/workflows/ci.yml
+    on: push
+
+    jobs:
+      check:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - uses: erlef/setup-beam@v1
+            with:
+              otp-version: false
+              gleam-version: '1.9.0'
+          - run: gleam check
+    ```
+
+    This is suitable for `gleam check`, `gleam format --check`, or other commands that do not execute compiled code.
+  </Tab>
+</Tabs>
+
+<Warning>
+  `otp-version: false` is only valid when `gleam-version` is also set. Attempting to use `otp-version: false` without specifying a Gleam version causes the action to exit with an error: `otp-version=false is only available when installing Gleam`.
+</Warning>
+
+## Gleam version compatibility
+
+Gleam does not follow Erlang/OTP's versioning scheme. The Gleam project publishes its own releases independently. When choosing an OTP version to pair with Gleam, check the Gleam release notes for any minimum OTP version requirements.
+
+<Note>
+  The action resolves Gleam versions from the [gleam-lang/gleam GitHub releases API](https://api.github.com/repos/gleam-lang/gleam/releases). Version strings should match release tag names, e.g. `1.9.0` (without the leading `v`). The action prepends `v` internally for the download URL.
+</Note>
+
+<Tip>
+  To always install the latest stable Gleam release, use `gleam-version: latest`. This resolves to the most recently published release, which may include release candidates. To target only stable releases and exclude RCs, use a range like `gleam-version: "> 0"`.
+</Tip>
+
+## Available outputs
+
+After the setup step, the exact resolved version is available as a step output:
+
+| Output | Example value |
+|---|---|
+| `gleam-version` | `v1.9.0` |
+| `otp-version` | `OTP-27.3.3` (not set when `otp-version: false`) |
+
+Reference outputs with `${{ steps.<step-id>.outputs.gleam-version }}`.

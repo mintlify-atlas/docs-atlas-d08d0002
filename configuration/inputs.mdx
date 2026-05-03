@@ -1,0 +1,124 @@
+---
+title: "setup-beam inputs: all action parameters explained"
+description: "Complete reference for all setup-beam inputs, covering Erlang/OTP, Elixir, Gleam, rebar3, version matching, and hex.pm mirror configuration."
+---
+
+The `erlef/setup-beam` action accepts the following inputs via the `with:` block in your workflow. All inputs are optional, but you must provide at least one of `otp-version`, `elixir-version`, `gleam-version`, or `rebar3-version` (or use `version-file`) for the action to do anything useful.
+
+<ParamField path="otp-version" type="string">
+  Version range or exact version of Erlang/OTP to install. Accepts exact versions like `'26.2.5'`, semver ranges like `'26.x'` or `'>22'`, `'latest'`, or `false` (only valid when installing Gleam without OTP). Omit this input entirely if you are not installing OTP.
+
+  **Example values:** `'26.2.5'`, `'27'`, `'27.x'`, `'latest'`, `false`
+</ParamField>
+
+<ParamField path="elixir-version" type="string">
+  Version range or exact version of Elixir to install. Requires OTP to already be installed (via `otp-version`). Accepts exact versions, semver ranges, or `'latest'`.
+
+  **Example values:** `'1.18.3'`, `'1.17.x'`, `'>1.15'`, `'latest'`
+</ParamField>
+
+<ParamField path="gleam-version" type="string">
+  Version range or exact version of Gleam to install. Can be combined with OTP, or used standalone by setting `otp-version: false`.
+
+  **Example values:** `'1.9.0'`, `'1.x'`, `'latest'`
+</ParamField>
+
+<ParamField path="rebar3-version" type="string">
+  Version range or exact version of rebar3 to install. Also accepts the special value `'nightly'` to install the latest nightly build.
+
+  **Example values:** `'3.24.0'`, `'3.x'`, `'nightly'`
+</ParamField>
+
+<ParamField path="version-type" type="string" default="loose">
+  Controls how version strings are interpreted. Set to `strict` to treat versions as exact matches (required when using `version-file` or pre-release versions). Set to `loose` to resolve versions using semver range rules.
+
+  **Allowed values:** `loose`, `strict`
+</ParamField>
+
+<ParamField path="version-file" type="string" default="">
+  Path to a versions file such as `.tool-versions` (asdf/mise format) or `mise.toml`. When set, the action reads tool versions from the file instead of from the `with:` inputs. You cannot specify both a `version-file` and individual version inputs at the same time. Requires `version-type: strict`.
+
+  **Example values:** `'.tool-versions'`, `'mise.toml'`, `'.mise.toml'`
+</ParamField>
+
+<ParamField path="install-hex" type="string" default="true">
+  Whether to run `mix local.hex --force` after installing Elixir. Set to `'false'` to skip Hex installation, for example in environments where network access to hex.pm is restricted.
+</ParamField>
+
+<ParamField path="install-rebar" type="string" default="true">
+  Whether to run `mix local.rebar --force` after installing Elixir. Set to `'false'` to skip the managed rebar installation bundled with Mix.
+</ParamField>
+
+<ParamField path="otp-architecture" type="string" default="64">
+  The CPU architecture of the OTP build to install on Windows. Accepts `'32'` or `'64'`. This input has no effect on Linux or macOS runners, which always use the runner's native architecture.
+
+  **Allowed values:** `32`, `64`
+</ParamField>
+
+<ParamField path="hexpm-mirrors" type="string" default="https://builds.hex.pm">
+  One or more hex.pm mirror URLs, one per line. The action tries each mirror in order and falls back to the next on failure. Useful in environments where `builds.hex.pm` is unreachable.
+
+  **Example values:** `'https://cdn.jsdelivr.net/hex'`, or a multi-line block with several mirrors
+</ParamField>
+
+<ParamField path="disable_problem_matchers" type="string" default="false">
+  When `'true'`, disables the Erlang and Elixir problem matchers that annotate pull request diffs with compiler warnings and errors. Set this if you have conflicting matcher configurations or want to suppress annotations.
+</ParamField>
+
+<ParamField path="github-token" type="string" default="${{ github.token }}">
+  A GitHub token used for read-only access to the GitHub REST API when resolving Gleam and rebar3 release versions. Defaults to the automatically generated workflow token. You should not need to change this unless you are hitting API rate limits. Do not supply a personal access token with write permissions.
+</ParamField>
+
+## Example workflow
+
+The following example demonstrates a comprehensive workflow that exercises the major inputs:
+
+```yaml
+# .github/workflows/ci.yml
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    name: OTP ${{ matrix.otp }} / Elixir ${{ matrix.elixir }}
+    strategy:
+      matrix:
+        otp: ['26.2.5', '27.3.3']
+        elixir: ['1.17.3', '1.18.3']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ matrix.otp }}
+          elixir-version: ${{ matrix.elixir }}
+          version-type: strict
+          install-hex: 'true'
+          install-rebar: 'true'
+          # Fall back to jsDelivr if builds.hex.pm is unavailable
+          hexpm-mirrors: |
+            https://builds.hex.pm
+            https://cdn.jsdelivr.net/hex
+
+      - run: mix deps.get
+      - run: mix test
+```
+
+### Installing Gleam without OTP
+
+```yaml
+- uses: erlef/setup-beam@v1
+  with:
+    otp-version: false
+    gleam-version: '1.9.0'
+```
+
+### Windows with 32-bit OTP
+
+```yaml
+- uses: erlef/setup-beam@v1
+  with:
+    otp-version: '26'
+    otp-architecture: '32'
+    rebar3-version: '3.24.0'
+```

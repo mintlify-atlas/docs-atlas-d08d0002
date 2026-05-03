@@ -1,0 +1,90 @@
+{
+  "projectType": "infrastructure",
+  "projectName": "setup-beam",
+  "projectDescription": "A GitHub Actions action that sets up a BEAM-based CI environment with Erlang/OTP, Elixir, Gleam, and rebar3.",
+  "theme": "aspen",
+  "primaryColor": "#ab0d39",
+  "lightColor": "#272324",
+  "darkColor": "#d2c4c8",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/inputs",
+              "configuration/outputs",
+              "configuration/version-file",
+              "configuration/version-types"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/elixir",
+              "guides/erlang-rebar3",
+              "guides/gleam",
+              "guides/matrix-testing",
+              "guides/self-hosted-runners",
+              "guides/hex-mirrors"
+            ]
+          },
+          {
+            "group": "Platform Support",
+            "pages": [
+              "platform/compatibility",
+              "platform/otp-architecture",
+              "platform/environment-variables"
+            ]
+          },
+          {
+            "group": "Project",
+            "pages": [
+              "project/versioning",
+              "project/contributing",
+              "project/security"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Install Erlang/OTP across Ubuntu, Windows, and macOS runners",
+    "Optional installation of Elixir, Gleam, rebar3, hex, and local.rebar",
+    "Flexible version matching: strict, loose (semver ranges), and 'latest'",
+    "Version file support via .tool-versions (asdf) and mise.toml formats",
+    "Problem matchers for Erlang and Elixir compile errors in pull requests",
+    "Configurable hex.pm mirrors for resilient dependency fetching",
+    "OTP architecture selection (32-bit / 64-bit) on Windows",
+    "Environment variables exposing installation directories for NIF builds"
+  ],
+  "publicApiSurface": [
+    "input: otp-version",
+    "input: elixir-version",
+    "input: gleam-version",
+    "input: rebar3-version",
+    "input: version-type (strict | loose)",
+    "input: version-file (.tool-versions | mise.toml)",
+    "input: install-hex",
+    "input: install-rebar",
+    "input: otp-architecture (32 | 64)",
+    "input: disable_problem_matchers",
+    "input: hexpm-mirrors",
+    "input: github-token",
+    "output: otp-version",
+    "output: elixir-version",
+    "output: gleam-version",
+    "output: rebar3-version",
+    "output: setup-beam-version"
+  ]
+}

@@ -1,0 +1,42 @@
+---
+title: "Supported OS, OTP version ranges, and CPU architectures"
+description: "Reference table of supported operating systems, Erlang/OTP version ranges, and CPU architectures for setup-beam on GitHub-hosted runners."
+---
+
+The `setup-beam` action supports a specific set of operating system and Erlang/OTP version combinations. Before configuring your workflow matrix, confirm that your target runner image and OTP version appear in the table below. Combinations not listed may work but are untested and unsupported.
+
+## Supported combinations
+
+| Operating system | Erlang/OTP version range | Architectures      | Status |
+|------------------|--------------------------|--------------------|--------|
+| `ubuntu-22.04`   | 24.2 – 28                | x86\_64, arm64     | ✅     |
+| `ubuntu-24.04`   | 24.3 – 28                | x86\_64, arm64     | ✅     |
+| `windows-2019`   | 21\* – 25                | x86\_64, x86       | ✅     |
+| `windows-2022`   | 21\* – 28                | x86\_64, x86       | ✅     |
+| `windows-2025`   | 21\* – 28                | x86\_64, x86       | ✅     |
+| `macOS-13`       | 25.0 – 28                | x86\_64, arm64     | ✅     |
+| `macOS-14`       | 25.0 – 28                | x86\_64, arm64     | ✅     |
+| `macOS-15`       | 25.0 – 28                | x86\_64, arm64     | ✅     |
+| `macOS-26`       | 25.0 – 28                | x86\_64, arm64     | ✅     |
+
+<Note>
+\* On Windows, OTP versions prior to 23 are only available as minor releases. For example, OTP 21 and 22 can be installed as `21.0`, `21.3`, `22.0`, etc., but patch-level versions such as `21.3.8` are not available.
+</Note>
+
+## Elixir / OTP compatibility
+
+Not every Elixir version is compatible with every OTP release. When you request an Elixir version, `setup-beam` automatically selects a build compiled against a compatible OTP major version. If no compatible build is found for the installed OTP, the action exits with an error.
+
+Consult the [Elixir compatibility and deprecations](https://hexdocs.pm/elixir/compatibility-and-deprecations.html) page on HexDocs for the full Elixir–OTP compatibility matrix.
+
+## rebar3 / OTP compatibility
+
+rebar3 also maintains its own compatibility guarantees with Erlang/OTP. Before pinning a rebar3 version in your matrix, review the [rebar3 compatibility table](https://github.com/erlang/rebar3?tab=readme-ov-file#compatibility-between-rebar3-and-erlangotp) in the `erlang/rebar3` repository.
+
+## Deprecated Ubuntu images
+
+The `ubuntu-18.04` and `ubuntu-20.04` runner images are deprecated. The action recognises them and emits a warning, but support is limited to maintenance only. Migrate to `ubuntu-22.04` or `ubuntu-24.04` to receive full support and access to newer OTP versions.
+
+<Warning>
+GitHub will eventually retire deprecated runner images entirely. Workflows still using `ubuntu-18.04` or `ubuntu-20.04` should be updated before those images are removed.
+</Warning>

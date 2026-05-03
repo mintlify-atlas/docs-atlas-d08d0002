@@ -1,0 +1,86 @@
+---
+title: "How to contribute code and fixes to erlef/setup-beam"
+description: "How to fork, build, test, and submit pull requests to the setup-beam GitHub Actions action maintained by the Erlang Ecosystem Foundation."
+---
+
+`setup-beam` welcomes contributions from the community. Whether you're fixing a bug, adding support for a new tool version, or improving documentation, this page covers the process for getting your changes reviewed and merged. Contributions are released under the project's [MIT license](https://github.com/erlef/setup-beam/blob/main/LICENSE.md).
+
+By participating in this project you agree to abide by the [Contributor Code of Conduct](https://github.com/erlef/.github/blob/main/CODE_OF_CONDUCT.md).
+
+## Submitting a pull request
+
+<Steps>
+  <Step title="Fork and clone the repository">
+    [Fork `erlef/setup-beam`](https://github.com/erlef/setup-beam/fork) on GitHub, then clone your fork locally:
+
+    ```bash
+    git clone https://github.com/<your-username>/setup-beam.git
+    cd setup-beam
+    ```
+  </Step>
+  <Step title="Install dependencies">
+    The action is written in JavaScript. Install all Node.js dependencies with:
+
+    ```bash
+    npm install
+    ```
+  </Step>
+  <Step title="Create a new branch">
+    Work on a dedicated branch rather than committing directly to `main`:
+
+    ```bash
+    git checkout -b my-branch-name
+    ```
+  </Step>
+  <Step title="Make your changes and add tests">
+    Edit the source files and add or update tests to cover your change. The test suite lives alongside the action source. Writing tests increases the likelihood of your pull request being accepted.
+  </Step>
+  <Step title="Build the distribution">
+    The repository tracks a compiled distribution. After making changes, regenerate it and fix any issues that surface:
+
+    ```bash
+    npm run build-dist
+    ```
+
+    Commit the updated distribution files along with your source changes.
+  </Step>
+  <Step title="Push and open a pull request">
+    Push your branch to your fork and [open a pull request](https://github.com/erlef/setup-beam/compare) against `erlef/setup-beam`:
+
+    ```bash
+    git push origin my-branch-name
+    ```
+
+    Include a clear description of what the change does and why.
+  </Step>
+</Steps>
+
+<Note>
+  Keep each pull request focused on a single change. If you have multiple unrelated improvements, submit them as separate pull requests — this makes review faster and keeps the history clean.
+</Note>
+
+## Running tests locally
+
+The test suite makes live calls to the GitHub REST API, so a valid GitHub token is required.
+
+**Prerequisites:** a classic GitHub personal access token with the `repo` scope.
+
+```bash
+export GITHUB_TOKEN=<your-token>
+npm test
+```
+
+<Warning>
+  Tests will fail without a valid `GITHUB_TOKEN`. The token is used only for read operations against the GitHub API (fetching release metadata) and is never transmitted elsewhere.
+</Warning>
+
+## Writing a good commit message
+
+Follow the guidance at [tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html): use an imperative subject line of 50 characters or fewer, and add a body paragraph when the change needs explanation.
+
+## Resources
+
+- [setup-beam on GitHub](https://github.com/erlef/setup-beam)
+- [Code of Conduct](https://github.com/erlef/.github/blob/main/CODE_OF_CONDUCT.md)
+- [How to Contribute to Open Source](https://opensource.guide/how-to-contribute/)
+- [Using Pull Requests](https://help.github.com/articles/about-pull-requests/)

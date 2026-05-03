@@ -1,0 +1,91 @@
+---
+title: "setup-beam: BEAM toolchain installer for GitHub Actions"
+description: "setup-beam is a GitHub Actions action that installs Erlang/OTP, Elixir, Gleam, and rebar3 into your GitHub Actions CI pipeline in a single step."
+---
+
+`setup-beam` is a GitHub Actions action maintained by the [Erlang Ecosystem Foundation](https://github.com/erlef/setup-beam) that sets up a complete BEAM toolchain for your CI workflows. Rather than writing shell scripts to download, compile, and configure each tool individually, you declare the versions you need and the action handles the rest — leaving your workflow steps free to run `mix test`, `rebar3 ct`, or `gleam test` immediately.
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Add setup-beam to a workflow and run your first test in under five minutes.
+  </Card>
+  <Card title="Inputs & outputs" icon="sliders" href="/configuration/inputs">
+    Full reference for every input, output, and default value.
+  </Card>
+  <Card title="Platform compatibility" icon="table" href="/platform/compatibility">
+    Supported OS, OTP, and architecture combinations.
+  </Card>
+  <Card title="Guides" icon="book-open" href="/guides/elixir">
+    Step-by-step guides for Elixir, Erlang + rebar3, Gleam, and more.
+  </Card>
+</CardGroup>
+
+## What it installs
+
+The action always installs **Erlang/OTP** (required by every BEAM language). All other tools are optional and installed only when you provide the corresponding version input:
+
+| Tool | Input | Notes |
+|---|---|---|
+| Erlang/OTP | `otp-version` | Required; set to `false` only for Gleam-only setups |
+| Elixir | `elixir-version` | Also runs `mix local.hex` and `mix local.rebar` by default |
+| Gleam | `gleam-version` | Can run without OTP when `otp-version: false` |
+| rebar3 | `rebar3-version` | Standalone install; also accepts `nightly` |
+| local.hex | `install-hex` | Installed automatically with Elixir; default `true` |
+| local.rebar | `install-rebar` | Installed automatically with Elixir; default `true` |
+
+## How it works
+
+The action runs as a Node.js step (`runs: using: node24`) early in your job. When the step completes, every installed tool is on `PATH` and its base directory is exported as an environment variable (e.g. `INSTALL_DIR_FOR_OTP`), so subsequent steps can find headers, binaries, and scripts without any additional configuration.
+
+Version resolution works as follows:
+
+1. The action fetches the available version list for each tool from its canonical source (hex.pm builds for OTP and Elixir, GitHub Releases for Gleam and rebar3).
+2. Your version spec is matched against that list using semver rules. Loose matching (the default) treats inputs like `'26'` or `'1.18.x'` as ranges; strict matching requires an exact version.
+3. The resolved version is downloaded, extracted, cached in the runner tool cache, and added to `PATH`.
+
+## Key features
+
+- **Cross-platform** — tested on Ubuntu 22.04/24.04, Windows 2019/2022/2025, and macOS 13 through 26, on both x86_64 and arm64 runners.
+- **Flexible version strategies** — exact pins, semver ranges (`26.x`, `>= 1.17`), `latest`, pre-release versions, and version files (`.tool-versions` / `mise.toml`).
+- **Matrix testing** — combine `otp-version` and `elixir-version` (or `rebar3-version`) in a strategy matrix to test across multiple version combinations in parallel.
+- **Problem matchers** — optional Erlang and Elixir problem matchers annotate warnings and errors directly on pull requests.
+- **hex.pm mirror support** — configure one or more alternative mirrors for environments where `builds.hex.pm` is unreachable.
+- **Tool cache** — previously downloaded versions are restored from the runner cache, reducing setup time on subsequent runs.
+
+<Tip>
+  Always specify versions as YAML strings (quoted). The value `otp-version: 26.0` is parsed by YAML as the number `26`, which is not the same as the string `'26.0'` and may resolve to an unexpected version.
+</Tip>
+
+## Self-hosted runners
+
+GitHub-hosted runners set the `ImageOS` environment variable automatically. On self-hosted runners you must set it manually so the action can select the correct binary package:
+
+```yaml
+jobs:
+  test:
+    runs-on: self-hosted
+    env:
+      ImageOS: ubuntu24
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: '27'
+          elixir-version: '1.18'
+```
+
+See the [platform compatibility](/platform/compatibility) page for the full list of supported `ImageOS` values.
+
+## Action versioning
+
+`setup-beam` follows a three-tier tag scheme. For example, version `1.8.0` is available as:
+
+- `@v1` — the latest `1.y.z` release (movable tag)
+- `@v1.8` — the latest `1.8.z` release (movable tag)
+- `@v1.8.0` — an exact, immutable release
+
+Using `@v1` is convenient and keeps you on the latest compatible release automatically. If you need reproducible builds, pin to a full `@vx.y.z` tag.
+
+<Note>
+  The source code, issue tracker, and full changelog are on GitHub at [erlef/setup-beam](https://github.com/erlef/setup-beam). The project is released under the MIT license.
+</Note>

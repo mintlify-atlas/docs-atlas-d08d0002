@@ -1,0 +1,59 @@
+---
+title: "INSTALL_DIR_FOR_* environment variables in setup-beam"
+description: "setup-beam exports INSTALL_DIR_FOR_OTP, INSTALL_DIR_FOR_ELIXIR, and related variables pointing to each tool's installation directory on the runner."
+---
+
+After each tool is installed, `setup-beam` exports an environment variable containing the path to that tool's installation directory. These variables are available to all subsequent steps in the same job, making it straightforward to locate headers, binaries, or other files that were placed on disk by the action.
+
+## Available variables
+
+| Variable                  | Points to                            |
+|---------------------------|--------------------------------------|
+| `INSTALL_DIR_FOR_OTP`     | Base installation folder for Erlang/OTP |
+| `INSTALL_DIR_FOR_ELIXIR`  | Base installation folder for Elixir  |
+| `INSTALL_DIR_FOR_GLEAM`   | Base installation folder for Gleam   |
+| `INSTALL_DIR_FOR_REBAR3`  | Base installation folder for rebar3  |
+
+Each variable is only set if the corresponding tool was actually installed. For example, `INSTALL_DIR_FOR_ELIXIR` is not exported when no `elixir-version` input is provided.
+
+## Directory layout
+
+Inside each installation directory you will find a `bin/` subfolder containing the platform-specific executables for that tool. The exact filenames depend on the operating system:
+
+- Linux / macOS: `erl`, `rebar3`, `gleam`, `elixir`, `mix`, etc.
+- Windows: `erl.exe`, `rebar3.exe`, `gleam.exe`, etc.
+
+The `bin/` directory is also added to `PATH` automatically, so you can invoke tools directly by name in `run:` steps without referencing the full path.
+
+## NIF development: locating OTP headers
+
+The most common use of `INSTALL_DIR_FOR_OTP` is finding the C headers required to compile a NIF (Natively Implemented Function). OTP ships its public C headers under `$INSTALL_DIR_FOR_OTP/usr/include/`.
+
+```yaml
+- name: Install dependencies
+  run: mix deps.get
+
+- name: Build NIF
+  run: make
+  env:
+    ERL_INCLUDE: ${{ env.INSTALL_DIR_FOR_OTP }}/usr/include
+```
+
+Pass `ERL_INCLUDE` (or the equivalent variable expected by your build system) to your compiler so it can find `erl_nif.h` and related headers.
+
+<Tip>
+On Windows the OTP installer places headers in the same relative path, so `${{ env.INSTALL_DIR_FOR_OTP }}/usr/include` works consistently across all supported platforms. You can use this pattern in a cross-platform matrix without conditional logic.
+</Tip>
+
+## Cross-platform builds
+
+When running a matrix across multiple operating systems, you can reference these variables in a platform-agnostic way because `setup-beam` always exports them with the same names regardless of the runner OS. Combine them with GitHub Actions' built-in expression syntax to avoid hardcoding paths:
+
+```yaml
+- name: Print OTP include path
+  run: echo "${{ env.INSTALL_DIR_FOR_OTP }}/usr/include"
+```
+
+<Note>
+On Windows, paths stored in these variables use the native Windows path separator (`\`). If you pass them to tools that expect POSIX paths (for example, inside a `bash` shell step), use `$INSTALL_DIR_FOR_OTP` with the Git Bash or MSYS2 shell, which performs path conversion automatically.
+</Note>

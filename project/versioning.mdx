@@ -1,0 +1,76 @@
+---
+title: "setup-beam release tags: @v1, @v1.8, and @v1.8.0 pins"
+description: "How setup-beam tags releases and which version tag strategy to use for stability, reproducibility, or staying current with latest patches."
+---
+
+`setup-beam` publishes every release under three overlapping version tags, giving you control over how aggressively your workflow picks up updates. Understanding the difference between movable and immovable tags helps you choose the right trade-off between staying current and keeping your CI deterministic.
+
+## Version tag strategies
+
+For any given release — say `1.8.0` — the following tags are available:
+
+| Tag | What it points to | Movable? |
+|-----|-------------------|----------|
+| `@v1` | Latest release in the `1.y.z` series | Yes |
+| `@v1.8` | Latest release in the `1.8.z` series | Yes |
+| `@v1.8.0` | Exactly release `1.8.0` | No |
+
+**Movable tags** are updated whenever a new matching release is published. `@v1` always points to the latest `1.x.x` release; `@v1.8` always points to the latest patch in the `1.8.x` line. **Immovable tags** like `@v1.8.0` never change — they permanently identify a single release.
+
+<Tip>
+  Use an exact version tag (`@vx.y.z`) for maximum stability and reproducibility. This ensures your workflow runs the same code every time, regardless of future releases.
+</Tip>
+
+## Examples
+
+<CodeGroup>
+
+```yaml Latest v1.x.x
+# Tracks the latest stable 1.x.x release.
+# Picks up new features and fixes automatically.
+- uses: erlef/setup-beam@v1
+  with:
+    otp-version: '27'
+    elixir-version: '1.18'
+```
+
+```yaml Latest patch in v1.8.x
+# Tracks patch releases within the 1.8.x line.
+# Picks up bug fixes while staying on a known minor version.
+- uses: erlef/setup-beam@v1.8
+  with:
+    otp-version: '27'
+    elixir-version: '1.18'
+```
+
+```yaml Exact version
+# Pinned to exactly v1.8.0. Never changes.
+# Recommended when reproducibility is critical.
+- uses: erlef/setup-beam@v1.8.0
+  with:
+    otp-version: '27'
+    elixir-version: '1.18'
+```
+
+</CodeGroup>
+
+## Major version compatibility
+
+The project maintains a strong commitment to backward compatibility within a major version. Breaking changes require a new major version number. This means `@v1` is safe to use for most workflows — you will receive new features and bug fixes, but not breaking changes.
+
+<Note>
+  If a release inadvertently introduces a regression, pinning to an exact `@vx.y.z` tag lets you stay on a known-good version while waiting for a fix.
+</Note>
+
+## The `setup-beam-version` output
+
+After the action runs, the `setup-beam-version` output contains the commit SHA of the action version that was actually executed — for example, `a34c98f`. You can use this to record exactly which code ran in a given workflow job, regardless of which tag you referenced.
+
+```yaml
+- uses: erlef/setup-beam@v1
+  id: setup-beam
+  with:
+    otp-version: '27'
+
+- run: echo "Ran setup-beam at commit ${{ steps.setup-beam.outputs.setup-beam-version }}"
+```

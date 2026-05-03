@@ -1,0 +1,55 @@
+---
+title: "Choose 32-bit or 64-bit OTP on Windows with setup-beam"
+description: "Use the otp-architecture input to install 32-bit (x86) or 64-bit (x86_64) Erlang/OTP on Windows GitHub Actions runners with setup-beam."
+---
+
+On Windows runners, Erlang/OTP is distributed as both a 64-bit (`x86_64`) and a 32-bit (`x86`) installer. The `otp-architecture` input lets you choose which variant `setup-beam` downloads and installs. This input is only meaningful on Windows; on all other platforms the installed OTP binary always matches the runner's native architecture.
+
+## Default behaviour
+
+When `otp-architecture` is not specified, it defaults to `64`, installing the standard 64-bit OTP build. Most Windows CI workflows do not need to change this.
+
+## Installing 32-bit OTP on Windows
+
+Set `otp-architecture` to `'32'` to install the 32-bit (`x86`) build of Erlang/OTP:
+
+```yaml
+# .github/workflows/ci.yml
+on: push
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: '26'
+          otp-architecture: '32'
+```
+
+<Warning>
+Setting `otp-architecture: '32'` on a non-Windows runner (Linux or macOS) causes the action to exit with an error immediately. Only use this input when `runs-on` targets a Windows image.
+</Warning>
+
+## Available values
+
+The only accepted values for `otp-architecture` are `'32'` and `'64'`. Any other value causes the action to exit with an error.
+
+| Value  | OTP installer filename pattern | Runner architecture |
+|--------|-------------------------------|---------------------|
+| `'64'` | `otp_win64_<version>.exe`     | x86\_64             |
+| `'32'` | `otp_win32_<version>.exe`     | x86                 |
+
+<Note>
+32-bit (`x86`) OTP builds are only published by the Erlang/OTP team for Windows. There are no 32-bit builds for Linux or macOS runners.
+</Note>
+
+## Use cases for 32-bit OTP
+
+Running a 32-bit OTP build is useful when:
+
+- You are testing a NIF or port driver that must be compiled for `x86` Windows targets.
+- Your application ships a bundled 32-bit Erlang runtime to end users on 32-bit Windows.
+- You need to reproduce a bug that only manifests in the `x86` memory model.
+
+For most application-level testing, the default 64-bit build is the right choice.

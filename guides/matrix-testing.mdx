@@ -1,0 +1,113 @@
+---
+title: "Matrix testing across OTP, Elixir, and rebar3 versions"
+description: "Run CI across multiple OTP, Elixir, and rebar3 version combinations using GitHub Actions matrix strategies and setup-beam in parallel jobs."
+---
+
+GitHub Actions matrix strategies let you run the same job across multiple version combinations in parallel. With `setup-beam`, this means you can verify your project against a range of OTP, Elixir, and rebar3 releases without duplicating workflow steps. This page shows three common matrix patterns: a full cross-product for Elixir, a full cross-product for rebar3, and a pinned compatibility matrix for projects that require specific validated pairings.
+
+## Elixir matrix
+
+The following workflow runs tests across every combination of the listed OTP and Elixir versions. With three OTP versions and two Elixir versions, this produces six parallel jobs.
+
+```yaml
+# .github/workflows/ci.yml
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    name: OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
+    strategy:
+      matrix:
+        otp: ['25.3.2', '26.2.5', '27.3.3']
+        elixir: ['1.17.3', '1.18.3']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{matrix.otp}}
+          elixir-version: ${{matrix.elixir}}
+      - run: mix deps.get
+      - run: mix test
+```
+
+<Note>
+  Not all Elixir versions are compatible with all OTP versions. The action validates the combination against the Elixir builds index and will fail with a descriptive error if the pairing is unsupported. Check the [Elixir compatibility and deprecations page](https://hexdocs.pm/elixir/compatibility-and-deprecations.html) when selecting version ranges.
+</Note>
+
+## rebar3 matrix
+
+The same pattern applies to Erlang + rebar3 projects. Three OTP versions and two rebar3 versions produce six jobs:
+
+```yaml
+# .github/workflows/ci.yml
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    name: Erlang/OTP ${{matrix.otp}} / rebar3 ${{matrix.rebar3}}
+    strategy:
+      matrix:
+        otp: ['25.3.2', '26.2.5', '27.3.3']
+        rebar3: ['3.23.0', '3.24.0']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{matrix.otp}}
+          rebar3-version: ${{matrix.rebar3}}
+      - run: rebar3 ct
+```
+
+Check the [rebar3 compatibility table](https://github.com/erlang/rebar3?tab=readme-ov-file#compatibility-between-rebar3-and-erlangotp) to confirm which rebar3 versions support your target OTP releases before adding them to the matrix.
+
+## Pinned compatibility matrix
+
+A full cross-product matrix tests every combination, including ones that may not be known-good pairings. An alternative is to define an explicit list of validated combinations using a structured matrix variable. This approach is particularly useful when different pairings also require different operating systems.
+
+```yaml
+jobs:
+  test:
+    runs-on: ${{matrix.compat.os}}
+    name: Erlang/OTP ${{matrix.compat.otp}} / rebar3 ${{matrix.compat.rebar3}}
+    strategy:
+      matrix:
+        compat:
+          - otp: "26.2.5.5"
+            rebar3: "3.22.1"
+            os: ubuntu-24.04
+          - otp: "27.1.2"
+            rebar3: "3.22.1"
+            os: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{matrix.compat.otp}}
+          rebar3-version: ${{matrix.compat.rebar3}}
+          version-type: strict
+      - run: rebar3 eunit
+```
+
+Each entry in `compat` is a single job with a specific, tested combination. Only those jobs run — no untested cross-products.
+
+<Tip>
+  Use `version-type: strict` with pinned matrix values. The default `loose` mode applies semver range resolution, which can resolve a pinned string like `"26.2.5.5"` to a different patch release if a newer one is available. Strict mode uses version strings exactly as provided, giving you reproducible installs.
+</Tip>
+
+## Excluding specific combinations
+
+If you use a cross-product matrix but want to skip a known incompatible pairing, use `exclude`:
+
+```yaml
+strategy:
+  matrix:
+    otp: ['25.3.2', '26.2.5', '27.3.3']
+    elixir: ['1.16.3', '1.17.3', '1.18.3']
+    exclude:
+      - otp: '25.3.2'
+        elixir: '1.18.3'
+```
+
+This runs the full 3×3 grid minus the excluded entry, producing eight jobs instead of nine.

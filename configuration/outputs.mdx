@@ -1,0 +1,104 @@
+---
+title: "setup-beam outputs: resolved versions and commit SHA"
+description: "Complete reference for all setup-beam outputs, including exact installed versions for OTP, Elixir, Gleam, and rebar3, and the action commit SHA."
+---
+
+After `erlef/setup-beam` runs, it exposes the resolved, exact versions of every tool it installed as step outputs. You can reference these in subsequent steps using the expression `${{ steps.<step-id>.outputs.<output-name> }}`. This is useful for logging, caching keys, or conditional logic downstream in your workflow.
+
+<ResponseField name="otp-version" type="string">
+  The exact version of Erlang/OTP that was installed, as reported by the OTP build system. The value includes the `OTP-` prefix.
+
+  **Example:** `OTP-26.2.5`
+</ResponseField>
+
+<ResponseField name="elixir-version" type="string">
+  The exact version of Elixir that was installed, including the OTP compatibility suffix appended by the action. The value includes a leading `v`.
+
+  **Example:** `v1.17.3-otp-26`
+</ResponseField>
+
+<ResponseField name="gleam-version" type="string">
+  The exact version of Gleam that was installed. The value includes a leading `v`.
+
+  **Example:** `v1.9.0`
+</ResponseField>
+
+<ResponseField name="rebar3-version" type="string">
+  The exact version of rebar3 that was installed.
+
+  **Example:** `3.24.0`
+</ResponseField>
+
+<ResponseField name="setup-beam-version" type="string">
+  The short commit SHA of the `erlef/setup-beam` action version that ran. Useful for auditing or pinning in security-sensitive workflows.
+
+  **Example:** `a34c98f`
+</ResponseField>
+
+## Capturing and using outputs
+
+To use outputs from `setup-beam`, assign the step an `id` and then reference that id in downstream steps.
+
+```yaml
+# .github/workflows/ci.yml
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        id: setup-beam
+        with:
+          otp-version: '26'
+          elixir-version: '1.17'
+
+      - name: Print installed versions
+        run: |
+          echo "OTP:   ${{ steps.setup-beam.outputs.otp-version }}"
+          echo "Elixir: ${{ steps.setup-beam.outputs.elixir-version }}"
+
+      - run: mix deps.get
+      - run: mix test
+```
+
+### Using outputs as a cache key
+
+Exact version outputs are well-suited for constructing deterministic cache keys:
+
+```yaml
+- uses: erlef/setup-beam@v1
+  id: setup-beam
+  with:
+    otp-version: '27'
+    elixir-version: '1.18'
+
+- uses: actions/cache@v4
+  with:
+    path: |
+      deps
+      _build
+    key: ${{ runner.os }}-mix-${{ steps.setup-beam.outputs.otp-version }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-mix-${{ steps.setup-beam.outputs.otp-version }}-${{ steps.setup-beam.outputs.elixir-version }}-
+
+- run: mix deps.get
+- run: mix test
+```
+
+### Gleam workflow with version output
+
+```yaml
+- uses: erlef/setup-beam@v1
+  id: setup-beam
+  with:
+    otp-version: '27'
+    gleam-version: '1.9.0'
+
+- name: Print Gleam version
+  run: echo "Gleam ${{ steps.setup-beam.outputs.gleam-version }}"
+
+- run: gleam test
+```

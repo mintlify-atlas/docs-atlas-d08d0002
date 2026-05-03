@@ -1,0 +1,69 @@
+---
+title: "Configure hex.pm mirrors for faster setup-beam downloads"
+description: "Speed up or increase reliability of setup-beam downloads by configuring alternative hex.pm mirrors for OTP on Linux and Elixir installations."
+---
+
+`setup-beam` downloads Erlang/OTP (on Linux) and Elixir from [builds.hex.pm](https://builds.hex.pm), the default hex.pm build mirror. In regions where `builds.hex.pm` is slow or unreliable, you can point the action at an alternative mirror or configure a prioritized fallback list. The action tries each mirror in order and moves to the next one only if a request fails.
+
+## Default mirror
+
+The `hexpm-mirrors` input defaults to:
+
+```
+https://builds.hex.pm
+```
+
+You do not need to set this input unless you want to change or augment the default.
+
+## Which downloads use mirrors
+
+Mirrors are used for:
+
+- **OTP on Linux** — The action fetches OTP tarballs from `${mirror}/builds/otp/${arch}/${os}/${version}.tar.gz`.
+- **Elixir** — The action fetches Elixir zip archives from `${mirror}/builds/elixir/${version}.zip`.
+
+OTP on Windows and macOS is fetched from GitHub Releases and is not affected by the `hexpm-mirrors` input.
+
+## Mirror configurations
+
+<CodeGroup>
+
+```yaml single mirror (jsDelivr)
+# Use cdn.jsdelivr.net/hex instead of builds.hex.pm
+- uses: erlef/setup-beam@v1
+  with:
+    otp-version: '26'
+    hexpm-mirrors: https://cdn.jsdelivr.net/hex
+```
+
+```yaml fallback mirrors
+# Try builds.hex.pm first, then cdn.jsdelivr.net/hex if it fails
+- uses: erlef/setup-beam@v1
+  with:
+    otp-version: '26'
+    hexpm-mirrors: |
+      https://builds.hex.pm
+      https://cdn.jsdelivr.net/hex
+```
+
+</CodeGroup>
+
+With the single-mirror configuration, the action uses only the specified mirror and never falls back to `builds.hex.pm`. With the multi-line fallback configuration, it tries mirrors in listed order and proceeds to the next one if a request fails.
+
+## How fallback works
+
+The action tries the first mirror in the list. If the request fails (network error, non-200 response, timeout), it logs the failure and immediately retries with the next mirror. This continues until a mirror succeeds or the list is exhausted. If all mirrors fail, the action exits with an error.
+
+<Tip>
+  For workflows running in regions where `builds.hex.pm` is consistently slow, place your preferred regional mirror first and keep `builds.hex.pm` as a fallback. This gives you the speed benefit of the closer mirror while retaining `builds.hex.pm` as a reliable fallback:
+
+  ```yaml
+  hexpm-mirrors: |
+    https://cdn.jsdelivr.net/hex
+    https://builds.hex.pm
+  ```
+</Tip>
+
+<Note>
+  The `hexpm-mirrors` input accepts one mirror URL per line. Empty lines are ignored. There is no limit on the number of mirrors you can specify.
+</Note>

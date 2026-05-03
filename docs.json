@@ -1,126 +1,78 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mintlify Starter Kit",
+  "name": "setup-beam",
+  "theme": "aspen",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#ab0d39",
+    "light": "#272324",
+    "dark": "#d2c4c8"
   },
-  "favicon": "/favicon.svg",
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "Guides",
-        "groups": [
-          {
-            "group": "Getting started",
-            "pages": [
-              "index",
-              "quickstart",
-              "development"
-            ]
-          },
-          {
-            "group": "Customization",
-            "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
-          },
-          {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/components",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "Agent ready",
-            "pages": [
-              "agent-ready/prompt",
-              "agent-ready/visibility",
-              "agent-ready/contextual",
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "API reference",
-        "groups": [
-          {
-            "group": "API documentation",
-            "pages": [
-              "api-reference/introduction"
-            ]
-          },
-          {
-            "group": "Endpoint examples",
-            "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
-            ]
-          }
-        ]
-      }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
+  "favicon": "https://media.brand.dev/a5d5b51d-855f-46c4-b34e-84043eeaa4f7.png",
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "https://media.brand.dev/3103972b-90db-42ab-8cc5-69cfae055618.svg",
+    "dark": "https://media.brand.dev/3103972b-90db-42ab-8cc5-69cfae055618.svg"
   },
   "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
     "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "type": "github",
+      "href": "https://github.com/erlef/setup-beam"
     }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "github": "https://github.com/erlef/setup-beam"
     }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/inputs",
+              "configuration/outputs",
+              "configuration/version-file",
+              "configuration/version-types"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/elixir",
+              "guides/erlang-rebar3",
+              "guides/gleam",
+              "guides/matrix-testing",
+              "guides/self-hosted-runners",
+              "guides/hex-mirrors"
+            ]
+          },
+          {
+            "group": "Platform Support",
+            "pages": [
+              "platform/compatibility",
+              "platform/otp-architecture",
+              "platform/environment-variables"
+            ]
+          },
+          {
+            "group": "Project",
+            "pages": [
+              "project/versioning",
+              "project/contributing",
+              "project/security"
+            ]
+          }
+        ]
+      }
+    ]
   }
 }

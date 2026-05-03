@@ -1,0 +1,63 @@
+---
+title: "Use setup-beam with self-hosted GitHub Actions runners"
+description: "Configure the ImageOS environment variable on self-hosted GitHub Actions runners so setup-beam can resolve and download the correct BEAM tooling."
+---
+
+GitHub-hosted runners automatically expose an `ImageOS` environment variable that `setup-beam` uses to determine which OS-specific build artifacts to download. Self-hosted runners do not set this variable, so you must set it manually in your workflow. Without it, the action cannot map your runner to a supported operating system and will exit with an error.
+
+<Warning>
+  If `ImageOS` is not set or does not match one of the known values, `setup-beam` will fail with a message listing the accepted values. The action does not attempt to auto-detect the operating system on self-hosted runners.
+</Warning>
+
+## Supported ImageOS values
+
+Set `ImageOS` to the value that corresponds to the operating system your self-hosted runner is running:
+
+| `ImageOS` | Operating system |
+|---|---|
+| `ubuntu22` | ubuntu-22.04 |
+| `ubuntu24` | ubuntu-24.04 |
+| `win19` | windows-2019 |
+| `win22` | windows-2022 |
+| `win25` | windows-2025 |
+| `macos13` | macOS-13 |
+| `macos14` | macOS-14 |
+| `macos15` | macOS-15 |
+| `macos26` | macOS-26 |
+
+## Workflow example
+
+Set `ImageOS` at the job level using the `env` key so it is available for all steps, including the setup-beam step that reads it:
+
+```yaml
+# .github/workflows/ci.yml
+on: push
+
+jobs:
+  test:
+    runs-on: self-hosted
+    env:
+      ImageOS: ubuntu24  # equivalent to runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: '27'
+          elixir-version: '1.18'
+      - run: mix deps.get
+      - run: mix test
+```
+
+Change the `ImageOS` value to match the actual OS of your self-hosted runner. For example, a runner on macOS 15 should use `macos15`.
+
+<Note>
+  The `ImageOS` variable maps to the same OS identifiers used for OTP build artifact paths on Linux (via hex.pm mirrors) and for locating the correct Windows installer on the GitHub releases API. It must exactly match one of the values in the table above — casing is significant.
+</Note>
+
+## Setting ImageOS at the runner level
+
+If all of your self-hosted runners share the same OS, you can avoid repeating the `env` block by setting `ImageOS` as a runner-level environment variable in your runner configuration instead. Refer to your runner infrastructure documentation for how to set persistent environment variables for GitHub Actions runner processes.
+
+<Tip>
+  If you manage multiple self-hosted runners with different operating systems, prefer setting `ImageOS` at the job level rather than the runner level. This keeps the mapping explicit and easy to audit alongside the rest of your workflow definition.
+</Tip>

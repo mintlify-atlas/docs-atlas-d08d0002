@@ -1,0 +1,133 @@
+---
+title: "Set up Erlang/OTP and rebar3 in GitHub Actions CI jobs"
+description: "Install Erlang/OTP and rebar3 on Ubuntu, Windows, and macOS with setup-beam, including nightly builds and version compatibility guidance."
+---
+
+The `erlef/setup-beam` action installs Erlang/OTP and rebar3 into your GitHub Actions runner on Linux, Windows, and macOS. It handles downloading platform-specific builds, extracting them, adding binaries to `PATH`, and exporting `INSTALL_DIR_FOR_OTP` and `INSTALL_DIR_FOR_REBAR3` environment variables for projects that need to locate headers or binaries directly.
+
+## Platform examples
+
+<CodeGroup>
+
+```yaml ubuntu-24.04
+# .github/workflows/ci.yml
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    name: Erlang/OTP ${{matrix.otp}} / rebar3 ${{matrix.rebar3}}
+    strategy:
+      matrix:
+        otp: ['25.3.2', '26.2.5', '27.3.3']
+        rebar3: ['3.23.0', '3.24.0']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{matrix.otp}}
+          rebar3-version: ${{matrix.rebar3}}
+      - run: rebar3 ct
+```
+
+```yaml windows-2025
+# .github/workflows/ci.yml
+on: push
+
+jobs:
+  test:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: '24'
+          rebar3-version: '3.16.1'
+      - run: rebar3 ct
+```
+
+```yaml macos-15
+# .github/workflows/ci.yml
+on: push
+
+jobs:
+  test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: '28'
+          rebar3-version: '3.25'
+      - run: rebar3 ct
+```
+
+</CodeGroup>
+
+<Note>
+  On Windows, OTP versions prior to 23 are only available for minor version releases (e.g., `21.0`, `21.3`, `22.0`). Patch-level versions such as `21.3.8` are not available as Windows installers for those older releases.
+</Note>
+
+## Using rebar3 nightly
+
+To test against the latest unreleased rebar3 build, set `rebar3-version: nightly`. The nightly binary is fetched from `https://s3.amazonaws.com/rebar3-nightly/rebar3`.
+
+```yaml
+- uses: erlef/setup-beam@v1
+  with:
+    otp-version: '27'
+    rebar3-version: nightly
+```
+
+<Warning>
+  Nightly builds are unstable by definition. Do not use them as the sole validation target for production releases. Use nightly in a separate job or workflow to catch upstream regressions early, while keeping your primary CI on a pinned stable version.
+</Warning>
+
+## Version compatibility
+
+Not every rebar3 version works with every OTP release. Check the [compatibility table in erlang/rebar3](https://github.com/erlang/rebar3?tab=readme-ov-file#compatibility-between-rebar3-and-erlangotp) before selecting version combinations.
+
+<Tip>
+  When running a matrix, use `version-type: strict` together with fully-qualified version strings to ensure you get exactly the combination you intend. Loose matching (the default) resolves to the highest matching version, which can change as new releases are published. For a matrix of pinned, validated combinations, see [Matrix testing across BEAM versions](/guides/matrix-testing).
+</Tip>
+
+## Pinning compatible OTP and rebar3 versions
+
+For long-lived projects it is common to maintain a set of explicitly validated OTP + rebar3 pairings rather than a full cross-product matrix. The compatibility matrix pattern lets you express this directly:
+
+```yaml
+jobs:
+  test:
+    runs-on: ${{matrix.compat.os}}
+    name: Erlang/OTP ${{matrix.compat.otp}} / rebar3 ${{matrix.compat.rebar3}}
+    strategy:
+      matrix:
+        compat:
+          - otp: "26.2.5.5"
+            rebar3: "3.22.1"
+            os: ubuntu-24.04
+          - otp: "27.1.2"
+            rebar3: "3.22.1"
+            os: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{matrix.compat.otp}}
+          rebar3-version: ${{matrix.compat.rebar3}}
+          version-type: strict
+      - run: rebar3 eunit
+```
+
+Setting `version-type: strict` tells the action to treat version strings as exact identifiers rather than semver ranges, which is the right choice when you have already validated a specific pairing.
+
+## Available outputs
+
+After the setup step, the resolved versions are available as outputs:
+
+| Output | Example value |
+|---|---|
+| `otp-version` | `OTP-27.3.3` |
+| `rebar3-version` | `3.24.0` |
+
+Reference them with `${{ steps.<step-id>.outputs.otp-version }}`.

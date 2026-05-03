@@ -1,133 +1,69 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
-icon: 'star'
+title: "setup-beam: install Erlang, Elixir, and Gleam in CI"
+description: "setup-beam is a GitHub Actions action that installs Erlang/OTP, Elixir, Gleam, and rebar3 into any workflow step on Ubuntu, Windows, or macOS."
 ---
 
-## Setting up
+`setup-beam` is a GitHub Actions action maintained by the [Erlang Ecosystem Foundation](https://erlef.org) that installs and configures the full BEAM toolchain — Erlang/OTP, Elixir, Gleam, and rebar3 — in your CI pipeline. It supports Ubuntu, Windows, and macOS runners, flexible version strategies, and integrates problem matchers for clearer build output.
 
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Add setup-beam to your workflow in under five minutes.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="All inputs & outputs" icon="sliders" href="/configuration/inputs">
+    Full reference for every action input and output field.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Version strategies" icon="code-branch" href="/configuration/version-types">
+    Strict pinning, semver ranges, version files, and more.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Platform compatibility" icon="table" href="/platform/compatibility">
+    Supported OS, OTP, and architecture combinations.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Choose your language
 
-Everything you need to create world-class documentation.
+<CardGroup cols={3}>
+  <Card title="Elixir" icon="e" href="/guides/elixir">
+    OTP + Elixir with hex and mix
+  </Card>
+  <Card title="Erlang + rebar3" icon="server" href="/guides/erlang-rebar3">
+    OTP + rebar3 on any platform
+  </Card>
+  <Card title="Gleam" icon="gem" href="/guides/gleam">
+    OTP + Gleam or Gleam-only
+  </Card>
+</CardGroup>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## Get started
 
-## Make your content agent ready
+<Steps>
+  <Step title="Add the action to your workflow">
+    Create or open `.github/workflows/ci.yml` in your repository.
+  </Step>
+  <Step title="Configure the versions you need">
+    Use `otp-version`, `elixir-version`, `gleam-version`, or `rebar3-version` inputs under `with:`.
+  </Step>
+  <Step title="Run your test suite">
+    Call `mix test`, `rebar3 ct`, or `gleam test` immediately after the setup step — the tools are on `PATH`.
+  </Step>
+</Steps>
 
-Make your docs work for humans and AI agents alike.
+```yaml .github/workflows/ci.yml
+on: push
 
-<Columns cols={2}>
-  <Card
-    title="Prompt component"
-    icon="robot"
-    href="/agent-ready/prompt"
-  >
-    Embed shareable AI prompts readers can copy or open in Cursor.
-  </Card>
-  <Card
-    title="Visibility"
-    icon="eye"
-    href="/agent-ready/visibility"
-  >
-    Show different content to humans and agents reading your docs.
-  </Card>
-  <Card
-    title="Contextual menu"
-    icon="bolt"
-    href="/agent-ready/contextual"
-  >
-    Give readers one-click access to Claude, ChatGPT, Cursor, and more.
-  </Card>
-  <Card
-    title="AI coding tools"
-    icon="wand-magic-sparkles"
-    href="/ai-tools/claude-code"
-  >
-    Set up Claude Code, Cursor, or Windsurf with Mintlify's skill.
-  </Card>
-</Columns>
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: '27'
+          elixir-version: '1.18'
+      - run: mix deps.get
+      - run: mix test
+```
 
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<Note>
+  Specify versions as YAML strings (quoted), not numbers. `otp-version: '26.2'` and `otp-version: 26.2` are not the same — the unquoted form may be truncated by YAML parsers.
+</Note>

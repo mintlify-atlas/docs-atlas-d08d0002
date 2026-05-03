@@ -1,0 +1,123 @@
+---
+title: "Version matching: strict, loose, latest, pre-release"
+description: "Learn how setup-beam resolves tool versions using strict exact matching, loose semver ranges, the latest keyword, and opt-in pre-release versions."
+---
+
+The `version-type` input controls how `setup-beam` interprets the version strings you provide. The default strategy (`loose`) resolves ranges flexibly using semver rules, while `strict` treats your input as a literal version string. Two additional strategies — `latest` and pre-release pinning — are available as special values regardless of `version-type`.
+
+<Note>
+  Always quote version strings in YAML. A value like `26.0` is parsed by YAML as the number `26`, which is not the same version string as `26.0`. Use `'26.0'` to ensure it is treated as a string.
+</Note>
+
+## Strict
+
+Set `version-type: strict` to treat the version string exactly as written, with no semver interpretation. The action looks up the version verbatim in the available releases list.
+
+Strict mode is recommended when you need fully reproducible builds, and is **required** when:
+- Using a `version-file`
+- Installing pre-release (RC) versions
+
+```yaml
+- uses: erlef/setup-beam@v1
+  with:
+    otp-version: '27.3.3'
+    elixir-version: '1.18.3'
+    rebar3-version: '3.24.0'
+    version-type: strict
+```
+
+In a matrix build, strict mode ensures every job installs exactly the pinned version:
+
+```yaml
+strategy:
+  matrix:
+    otp: ['26.2.5', '27.3.3']
+    elixir: ['1.17.3', '1.18.3']
+steps:
+  - uses: erlef/setup-beam@v1
+    with:
+      otp-version: ${{ matrix.otp }}
+      elixir-version: ${{ matrix.elixir }}
+      version-type: strict
+```
+
+## Loose (default)
+
+`version-type: loose` (the default) resolves versions using semver range rules. You can provide partial version strings, comparison operators, or wildcard placeholders, and the action will select the highest matching version available.
+
+| Input | Resolves to |
+| ----- | ----------- |
+| `'27'` | Latest patch release of OTP 27 |
+| `'26.x'` | Latest patch release of OTP 26 |
+| `'>22'` | Latest OTP version greater than 22 |
+| `'1.15.x'` | Latest Elixir 1.15.x release |
+| `'1.17'` | Latest patch release of Elixir 1.17 |
+
+```yaml
+- uses: erlef/setup-beam@v1
+  with:
+    otp-version: '27'
+    elixir-version: '1.18'
+    # version-type defaults to loose
+```
+
+```yaml
+- uses: erlef/setup-beam@v1
+  with:
+    otp-version: '>26'
+    elixir-version: '1.17.x'
+    rebar3-version: '3.x'
+```
+
+<Note>
+  Loose ranges do not include pre-release versions (such as release candidates) unless you explicitly use the `latest` keyword. Use `version-type: strict` with a full RC version string to install a pre-release.
+</Note>
+
+## Latest
+
+Set the version to the string `'latest'` to install the most recent available version of a tool. The action determines "latest" from the releases list it fetches at runtime.
+
+```yaml
+- uses: erlef/setup-beam@v1
+  with:
+    otp-version: 'latest'
+    elixir-version: 'latest'
+```
+
+<Warning>
+  `latest` may resolve to a release candidate or other pre-release version, since the action selects the highest version in the release list without filtering. If you want the latest **stable** release, use a range like `'> 0'` instead.
+</Warning>
+
+```yaml
+# Latest stable (no RCs)
+- uses: erlef/setup-beam@v1
+  with:
+    otp-version: '> 0'
+    elixir-version: '> 0'
+```
+
+The definition of "latest" used by the action may also differ from what GitHub labels as the "latest" release on a repository's releases page, since the action builds its own sorted list from all available releases.
+
+## Pre-release versions
+
+Pre-release versions such as release candidates are opt-in. To install one, specify the exact version string and set `version-type: strict`:
+
+```yaml
+- uses: erlef/setup-beam@v1
+  with:
+    otp-version: '27.0-rc2'
+    elixir-version: 'v1.18.0-rc.0'
+    version-type: strict
+```
+
+Patterns like `1.18.x` or `loose` ranges will **not** include pre-release versions. The only way to install an RC is to name it explicitly with `version-type: strict`.
+
+## Summary
+
+| Strategy | `version-type` | Version input | Includes RCs |
+| -------- | -------------- | ------------- | ------------ |
+| Strict exact match | `strict` | `'27.3.3'` | Only if specified |
+| Semver range | `loose` (default) | `'27.x'`, `'>26'` | No |
+| Latest (any) | either | `'latest'` | Yes |
+| Latest stable | either | `'> 0'` | No |
+| Pre-release pin | `strict` | `'v1.18.0-rc.0'` | Yes (explicit) |

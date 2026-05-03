@@ -1,0 +1,55 @@
+---
+title: "setup-beam security policy and github-token guidance"
+description: "How to report vulnerabilities in setup-beam, the github-token input's required scope, and the project's security posture and license."
+---
+
+`setup-beam` is maintained by the [Erlang Ecosystem Foundation](https://erlef.org) and released under the [MIT license](https://github.com/erlef/setup-beam/blob/main/LICENSE.md). The project takes security seriously: the action is designed to request only the permissions it needs, and its full security policy is published in the repository.
+
+## Security policy
+
+The official security policy — including how to report vulnerabilities and the project's disclosure process — is at:
+
+[https://github.com/erlef/setup-beam/blob/main/SECURITY.md](https://github.com/erlef/setup-beam/blob/main/SECURITY.md)
+
+Please follow the process described there rather than opening a public issue for security-sensitive reports.
+
+## The `github-token` input
+
+`setup-beam` accepts an optional `github-token` input used when querying the GitHub REST API to resolve tool versions (Erlang/OTP, Elixir, Gleam, rebar3 release metadata). The action performs **read-only** operations only — it never writes to your repository, creates releases, or modifies any resources.
+
+Because only read access is required, the default token that GitHub Actions injects into every workflow job is sufficient:
+
+```yaml
+- uses: erlef/setup-beam@v1
+  with:
+    otp-version: '27'
+    elixir-version: '1.18'
+    github-token: ${{ github.token }}  # default; often omitted entirely
+```
+
+<Note>
+  You do not need to pass `github-token` explicitly. If the input is omitted, the action uses the same `${{ github.token }}` automatically.
+</Note>
+
+<Warning>
+  Do not supply a personal access token with broader scope than necessary. The `${{ github.token }}` provided by GitHub Actions is scoped to the current repository and expires when the workflow job finishes — it is the safest option.
+</Warning>
+
+## Pinning to a specific version
+
+For security-sensitive environments, pin `setup-beam` to an exact release tag (for example `@v1.8.0`) or to a full commit SHA. This ensures that the action code cannot change underneath you if a movable tag like `@v1` is updated.
+
+```yaml
+# Pinned to an exact release — recommended for security-conscious workflows
+- uses: erlef/setup-beam@v1.8.0
+```
+
+See [release versioning](/project/versioning) for a full explanation of the tag strategies available.
+
+## Maintainer and license
+
+`setup-beam` is maintained by the [Erlang Ecosystem Foundation (erlef)](https://erlef.org), a nonprofit organization supporting the Erlang and Elixir ecosystems. The action's source code and documentation are released under the MIT license.
+
+<Card title="Security policy on GitHub" icon="shield" href="https://github.com/erlef/setup-beam/blob/main/SECURITY.md">
+  Read the full security policy, including vulnerability reporting instructions and the project's disclosure timeline.
+</Card>

@@ -1,0 +1,118 @@
+---
+title: "Declare BEAM versions in .tool-versions or mise.toml"
+description: "Use a .tool-versions or mise.toml file to centrally declare BEAM tool versions, keeping your workflow YAML and local dev environment in sync."
+---
+
+Instead of specifying tool versions inline in your workflow's `with:` block, you can point `setup-beam` at a version file using the `version-file` input. The action reads tool versions from the file and installs them exactly as specified. This is particularly useful when you already use [asdf](https://asdf-vm.com) or [mise](https://mise.jdx.dev) locally, because the same file can drive both your local environment and CI without duplication.
+
+## How the file type is detected
+
+The action determines the file format from the filename:
+
+- Files ending in `.toml` are parsed as [mise](https://mise.jdx.dev/configuration.html#tools-dev-tools) TOML configuration.
+- All other files (including `.tool-versions`) are parsed as [asdf `.tool-versions`](https://asdf-vm.com/manage/configuration.html) format.
+
+## Key correspondence
+
+The version file uses different key names than the action's `with:` inputs. The mapping is:
+
+| `with:` input    | Version file key |
+| ---------------- | ---------------- |
+| `otp-version`    | `erlang`         |
+| `elixir-version` | `elixir`         |
+| `gleam-version`  | `gleam`          |
+| `rebar3-version` | `rebar`          |
+
+Only keys that appear in the file are used. You do not need to include all four — for example, a pure Erlang project need only list `erlang`.
+
+## File formats
+
+<Tabs>
+  <Tab title=".tool-versions">
+    The `.tool-versions` format is a plain-text file with one tool per line, where each line contains the tool name followed by the version separated by a space.
+
+    ```
+    erlang 27.3.3
+    elixir 1.18.3
+    rebar 3.24.0
+    ```
+
+    You can also use `ref:` prefixes supported by some asdf plugins:
+
+    ```
+    erlang ref:27.3.3
+    elixir 1.18.3
+    ```
+
+    Lines beginning with `#` and blank lines are ignored.
+  </Tab>
+  <Tab title="mise.toml">
+    The `mise.toml` format is a TOML file with tool versions declared under a `[tools]` section. Both plain string values and inline tables (with a `version` key) are supported.
+
+    ```toml
+    [tools]
+    erlang = "27.3.3"
+    elixir = "1.18.3"
+    rebar  = "3.24.0"
+    ```
+
+    Using an inline table (for additional mise options):
+
+    ```toml
+    [tools]
+    erlang = { version = "27.3.3" }
+    elixir = { version = "1.18.3" }
+    ```
+  </Tab>
+</Tabs>
+
+## Constraints
+
+<Warning>
+  When using `version-file`, you **must** set `version-type: strict` in your workflow. The action will exit with an error if `version-type` is anything other than `strict`.
+</Warning>
+
+<Warning>
+  You **cannot** specify both a `version-file` and individual version inputs (such as `otp-version`) for the same tool at the same time. The action will exit with an error if it detects a conflict between a `with:` input and a version declared in the file.
+</Warning>
+
+## Example workflow
+
+The following example reads all tool versions from a `.tool-versions` file at the root of the repository:
+
+```yaml
+# .github/workflows/ci.yml
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - run: mix deps.get
+      - run: mix test
+```
+
+To use a `mise.toml` file instead, just change the `version-file` value:
+
+```yaml
+- uses: erlef/setup-beam@v1
+  with:
+    version-file: mise.toml
+    version-type: strict
+```
+
+The workflow above requires a `mise.toml` (or `.tool-versions`) at the root of the checked-out repository. If your version file is in a subdirectory, provide the relative path from the workspace root:
+
+```yaml
+- uses: erlef/setup-beam@v1
+  with:
+    version-file: config/.tool-versions
+    version-type: strict
+```
